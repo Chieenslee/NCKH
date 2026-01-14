@@ -324,8 +324,8 @@ form {
 }
 
 #speed-range {
-  appearance: none; /* standard property for cross-browser compatibility */
   -webkit-appearance: none;
+  appearance: none;
   background: transparent;
 }
 
@@ -672,15 +672,19 @@ form {
 @media (max-width: 900px) {
   #app {
     max-width: 100%;
+    height: 100vh;
   }
 
   .app-main {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
   }
-
+  .panel-center {
+    order: 2;
+    height: 300px;
+  }
   .panel {
-    min-height: auto;
+    min-height: 0;
   }
 }
 
