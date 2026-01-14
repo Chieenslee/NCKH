@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Ứng dụng đường đi Euler trong bài toán tối ưu lộ trình cho xe quét đường đô thị</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="assets/logo_1.png" type="image/png">
+</head>
+
+<body>
+  <div id="app">
+    <header class="app-header">
+      <div class="logo-title">
+        <div class="logo-circle"><img src="assets/logo_1.png" alt="logo" width="36" height="36"></div>
+        <div>
+          <h1>Ứng dụng đường đi Euler</h1>
+          <p>Mô phỏng và trực quan hóa lộ trình tối ưu cho xe quét đường</p>
+        </div>
+      </div>
+      <div class="logo-right"><img src="assets/logo_2.png" alt="logo" width="36" height="36"></div>
+    </header>
+
+    <main class="app-main">
+      <!-- Control Panel -->
+      <section class="panel panel-left">
+        <h2>BẢNG ĐIỀU KHIỂN</h2>
+
+        <div class="panel-block">
+          <h3>1. Nhập mạng lưới đường</h3>
+          <div class="bulk-input">
+            <label for="bulk-edges">Hoặc nhập nhiều đoạn (mỗi dòng: A B 10)</label>
+            <textarea id="bulk-edges" rows="4" placeholder="A B 5&#10;B C 7&#10;C D 4"></textarea>
+            <button id="bulk-add-btn" class="btn ghost">
+              Thêm
+            </button>
+          </div>
+
+          <div class="edge-actions">
+            <button id="draw-mode-btn" class="btn ghost">
+              ✎ Vẽ tay
+            </button>
+            <button id="load-sample" class="btn ghost">
+              Tạo ví dụ mẫu
+            </button>
+            <button id="clear-graph" class="btn ghost danger">
+              Xóa toàn bộ
+            </button>
+          </div>
+
+          <div class="edge-list">
+            <div class="list-header">
+              <span>ID</span>
+              <span>Từ</span>
+              <span>Đến</span>
+              <span>Độ dài</span>
+            </div>
+            <div id="edge-table-body" class="list-body"></div>
+          </div>
+        </div>
+
+        <div class="panel-block">
+          <h3>2. Thiết lập & phân tích</h3>
+          <div class="form-row">
+            <label for="start-node">Điểm xuất phát</label>
+            <select id="start-node"></select>
+          </div>
+          <div class="form-row checkbox-row">
+            <input type="checkbox" id="return-start" checked />
+            <label for="return-start">Quay lại điểm xuất phát</label>
+          </div>
+
+          <div class="panel-buttons">
+            <button id="analyze-btn" class="btn secondary">
+              Phân tích mạng lưới
+            </button>
+            <button id="compute-route-btn" class="btn primary">
+              Tính lộ trình tối ưu
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-block">
+          <h3>3. Điều khiển mô phỏng</h3>
+          <div class="sim-controls">
+            <button id="play-btn" class="btn primary sim-main-btn">
+              ▶ Chạy xe quét
+            </button>
+            <div class="sim-buttons">
+              <button id="pause-btn" class="btn secondary">⏸ Tạm dừng</button>
+              <button id="reset-btn" class="btn ghost">⟲ Reset</button>
+            </div>
+            <div class="form-row">
+              <label for="speed-range">
+                Tốc độ mô phỏng:
+                <span id="speed-label">1x</span>
+              </label>
+              <input id="speed-range" type="range" min="0.1" max="1.5" step="0.05" value="0.4" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Visualization -->
+      <section class="panel panel-center">
+        <div class="panel-header">
+          <h2>Màn hình Radar</h2>
+          <span class="view-mode-badge">Chế độ: Cấu trúc đồ thị</span>
+        </div>
+        <div id="graph-container">
+          <svg id="graph-svg"></svg>
+          <div id="graph-empty-hint">
+            <p>Chưa có dữ liệu mạng lưới.</p>
+            <p>Hãy thêm một vài đoạn đường ở panel bên trái hoặc nhấn “Tạo ví dụ mẫu”.</p>
+          </div>
+          <div id="sweeper-icon">🚛</div>
+        </div>
+        <div id="status-log"></div>
+      </section>
+
+      <!-- Analytics Board -->
+      <section class="panel panel-right">
+        <h2>PHÂN TÍCH</h2>
+
+        <div class="panel-block">
+          <h3>Tổng quan mạng lưới</h3>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-label">Số nút</span>
+              <span id="stat-nodes" class="stat-value">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Số cạnh</span>
+              <span id="stat-edges" class="stat-value">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Tổng độ dài ban đầu</span>
+              <span id="stat-length-original" class="stat-value">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Tổng độ dài tối ưu</span>
+              <span id="stat-length-optimized" class="stat-value">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-block">
+          <h3>Trạng thái Euler</h3>
+          <div id="euler-status" class="euler-status unknown">
+            Chưa phân tích
+          </div>
+          <div class="odd-nodes">
+            <h4>Các đỉnh bậc lẻ</h4>
+            <ul id="odd-nodes-list"></ul>
+          </div>
+        </div>
+
+        <div class="panel-block">
+          <h3>Lộ trình tối ưu</h3>
+          <ol id="route-steps" class="route-steps"></ol>
+        </div>
+
+        <div class="panel-block">
+          <h3>Tiến độ mô phỏng</h3>
+          <div class="progress-bar">
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+          <div class="progress-info">
+            <span id="progress-percent">0%</span>
+            <span id="progress-distance">0 / 0</span>
+          </div>
+        </div>
+
+        <div class="panel-block">
+          <h3>Kết quả & giải thích</h3>
+          <div id="summary-box" class="summary-box">
+            Chưa có dữ liệu. Hãy nhập mạng lưới và tính lộ trình để xem phân tích.
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
